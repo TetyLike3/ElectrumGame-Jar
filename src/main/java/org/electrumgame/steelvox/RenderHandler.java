@@ -3,6 +3,7 @@ package org.electrumgame.steelvox;
 import org.electrumgame.Settings;
 import org.electrumgame.steelvox.graphics.*;
 
+import org.electrumgame.steelvox.graphics.devices.PhysicalDevice;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -18,6 +19,7 @@ public class RenderHandler {
     private Window window;
     private VkInstance instance;
     private ValidationLayers validationLayers;
+    private PhysicalDevice physicalDevice;
 
     public void run() {
         System.out.println("Initialising SteelVox rendering engine...");
@@ -40,6 +42,9 @@ public class RenderHandler {
 
         System.out.println("Initialising validation layers...");
         validationLayers.setupDebugMessenger(instance);
+
+        System.out.println("Initialising physical device...");
+        physicalDevice = new PhysicalDevice(instance);
     }
 
     private void mainLoop() {
