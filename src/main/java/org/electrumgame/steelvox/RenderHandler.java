@@ -9,15 +9,17 @@ import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
 
 
 public class RenderHandler {
 
-    private static Window window;
-    private static VkInstance instance;
+    private Window window;
+    private VkInstance instance;
+    private ValidationLayers validationLayers;
 
-    public static void run() {
+    public void run() {
         System.out.println("Initialising SteelVox rendering engine...");
 
         window = new Window(Settings.rendererSettings.windowSettings);
@@ -31,17 +33,23 @@ public class RenderHandler {
         System.out.println("SteelVox renderer terminated.");
     }
 
-    private static void initVulkan() {
+    private void initVulkan() {
         System.out.println("Initialising Vulkan...");
 
         createInstance();
+
+        System.out.println("Initialising validation layers...");
+        validationLayers.setupDebugMessenger(instance);
     }
 
-    private static void mainLoop() {
+    private void mainLoop() {
         window.mainLoop();
     }
 
-    private static void cleanup() {
+    private void cleanup() {
+        System.out.println("Cleaning up validation layers...");
+        validationLayers.cleanup(instance);
+
         System.out.println("Destroying Vulkan instance...");
         vkDestroyInstance(instance, null);
 
@@ -50,7 +58,15 @@ public class RenderHandler {
     }
 
 
-    private static void createInstance() {
+    private void createInstance() {
+        validationLayers = new ValidationLayers();
+
+        if (validationLayers.getValidationLayerState() == ValidationLayerState.NOT_PRESENT) {
+            throw new RuntimeException("Validation layers requested, but not available!");
+        }
+        System.out.println("Validation layers are " + validationLayers.getValidationLayerState().toString());
+
+
         System.out.println("Creating Vulkan instance...");
 
         try (MemoryStack stack = stackPush()) {
@@ -65,8 +81,15 @@ public class RenderHandler {
             VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.calloc(stack)
                 .sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
                 .pApplicationInfo(appInfo)
-                .ppEnabledExtensionNames(glfwGetRequiredInstanceExtensions())
-                .ppEnabledLayerNames(null);
+                .ppEnabledExtensionNames(getRequiredExtensions(stack));
+
+            if (validationLayers.isEnabled()) {
+                createInfo.ppEnabledLayerNames(validationLayers.validationLayersAsPointerBuffer(stack));
+
+                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
+                validationLayers.populateDebugMessengerCreateInfo(debugCreateInfo);
+                createInfo.pNext(debugCreateInfo.address());
+            }
 
             PointerBuffer instancePtr = stack.mallocPointer(1);
             if (vkCreateInstance(createInfo, null, instancePtr) != VK_SUCCESS) {
@@ -75,5 +98,20 @@ public class RenderHandler {
 
             instance = new VkInstance(instancePtr.get(0), createInfo);
         }
+    }
+
+    private PointerBuffer getRequiredExtensions(MemoryStack stack) {
+        PointerBuffer glfwExtensions = glfwGetRequiredInstanceExtensions();
+
+        if(validationLayers.isEnabled()) {
+            assert glfwExtensions != null;
+            PointerBuffer extensions = stack.mallocPointer(glfwExtensions.capacity() + 1);
+            extensions.put(glfwExtensions);
+            extensions.put(stack.UTF8(VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+
+            return extensions.rewind();
+        }
+
+        return glfwExtensions;
     }
 }

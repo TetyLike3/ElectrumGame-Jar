@@ -11,7 +11,8 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Starting Electrum...");
 
-        RenderHandler.run();
+        RenderHandler renderHandler = new RenderHandler();
+        renderHandler.run();
 
         System.out.println("Electrum terminated.");
     }
