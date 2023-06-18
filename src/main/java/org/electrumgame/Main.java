@@ -5,14 +5,14 @@ package org.electrumgame;
 
 import org.electrumgame.steelvox.RenderHandler;
 
-import java.io.IOException;
-
 public class Main {
     // Settings struct
 
     public static void main(String[] args) {
         System.out.println("Starting Electrum...");
 
-        RenderHandler.run(Settings.rendererSettings);
+        RenderHandler.run();
+
+        System.out.println("Electrum terminated.");
     }
 }

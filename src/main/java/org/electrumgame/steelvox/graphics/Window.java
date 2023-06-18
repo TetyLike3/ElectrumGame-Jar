@@ -37,4 +37,9 @@ public class Window {
             throw new RuntimeException("Failed to create the GLFW window!");
         }
     }
+
+    public void cleanup() {
+        glfwDestroyWindow(windowHandle);
+        glfwTerminate();
+    }
 }
