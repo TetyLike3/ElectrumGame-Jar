@@ -51,6 +51,10 @@ public class ValidationLayers {
         // Check for presence
         if (ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport()) {
             validationLayerState = ValidationLayerState.NOT_PRESENT;
+        } else if (ENABLE_VALIDATION_LAYERS) {
+            validationLayerState = ValidationLayerState.ENABLED;
+        } else {
+            validationLayerState = ValidationLayerState.DISABLED;
         }
         return validationLayerState;
     }
